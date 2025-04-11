@@ -1,0 +1,64 @@
+// Versión mejorada con depuración completa
+if (!Array.isArray(this.customRoles)) {
+    console.log('[DEBUG] customRoles no es un array, inicializando...');
+    this.customRoles = [];
+}
+
+console.log(`[DEBUG] Estado inicial de customRoles:`, this.customRoles);
+
+if (this.customRoles.length === 0) {
+    try {
+        console.log('[DEBUG] Intentando obtener roles de la base de datos...');
+
+        // 1. Verificar que client.db existe
+        if (!client.db) {
+            throw new Error('client.db no está definido');
+        }
+
+        // 2. Verificar que getCustomRoles existe
+        if (typeof client.db.getCustomRoles !== 'function') {
+            throw new Error('client.db.getCustomRoles no es una función');
+        }
+
+        const savedRoles = await client.db.getCustomRoles();
+        console.log('[DEBUG] Datos crudos recibidos de getCustomRoles():', savedRoles);
+
+        // 3. Validar la respuesta
+        if (!savedRoles) {
+            console.log('[DEBUG] getCustomRoles() devolvió undefined/null');
+        } else if (!Array.isArray(savedRoles)) {
+            console.log('[DEBUG] getCustomRoles() no devolvió un array:', typeof savedRoles);
+        } else {
+            // 4. Filtrar roles válidos
+            const validRoles = savedRoles.filter(role => {
+                const isValid = role && 
+                                role.roleId && 
+                                typeof role.name === 'string' &&
+                                Number.isInteger(role.rewardAmount) &&
+                                Number.isInteger(role.rewardDays);
+
+                if (!isValid) {
+                    console.log('[DEBUG] Rol inválido detectado:', role);
+                }
+                return isValid;
+            });
+
+            console.log(`[DEBUG] ${validRoles.length} roles válidos encontrados`);
+            this.customRoles = validRoles;
+        }
+    } catch (error) {
+        console.error('[ERROR] Fallo al cargar roles personalizados:', error);
+        // Opcional: enviar mensaje al canal
+        message.channel.send({
+            embeds: [
+                new EmbedBuilder()
+                    .setColor(client.config.embedColors.error)
+                    .setDescription('⚠️ Error al cargar configuración de roles personalizados')
+            ]
+        }).catch(console.error);
+    }
+} else {
+    console.log('[DEBUG] Roles ya cargados, omitiendo carga desde DB');
+}
+
+console.log('[DEBUG] Estado final de customRoles:', this.customRoles);

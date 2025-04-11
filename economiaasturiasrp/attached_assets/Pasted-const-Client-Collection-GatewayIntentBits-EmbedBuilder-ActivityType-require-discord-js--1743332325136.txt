@@ -1,0 +1,102 @@
+const { Client, Collection, GatewayIntentBits, EmbedBuilder, ActivityType } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
+const config = require('./config.json');
+require('dotenv').config();
+
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers
+    ]
+});
+
+client.commands = new Collection();
+client.aliases = new Collection();
+client.economy = require('./utils/economy.js');
+client.db = require('./utils/database.js');
+client.config = config;
+
+// Load commands
+const loadCommands = (dir = path.join(__dirname, "commands")) => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+        return;
+    }
+
+    fs.readdirSync(dir).forEach(dirs => {
+        const commandFiles = fs.readdirSync(`${dir}/${dirs}`).filter(file => file.endsWith('.js'));
+
+        for (const file of commandFiles) {
+            const command = require(`${dir}/${dirs}/${file}`);
+            client.commands.set(command.name, command);
+
+            if (command.aliases && Array.isArray(command.aliases)) {
+                command.aliases.forEach(alias => client.aliases.set(alias, command.name));
+            }
+        }
+    });
+};
+
+loadCommands();
+
+client.once('ready', () => {
+    console.log(`Bot conectado como ${client.user.tag}`);
+    client.user.setActivity('Economía', { type: ActivityType.Watching });
+});
+
+client.on('messageCreate', async message => {
+    if (message.author.bot) return;
+    if (!message.content.startsWith(config.prefix)) return;
+
+    const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
+    const commandName = args.shift().toLowerCase();
+
+    const command = client.commands.get(commandName) || client.commands.get(client.aliases.get(commandName));
+
+    if (!command) return;
+
+    try {
+        await command.execute(client, message, args);
+    } catch (error) {
+        console.error(error);
+        message.reply('Ha ocurrido un error al ejecutar el comando.');
+    }
+});
+
+// Sistema de multas y notificaciones
+client.on('fine', async (userId, amount, reason) => {
+    const user = await client.users.fetch(userId);
+    const success = await client.economy.removeBankBalance(userId, amount);
+    
+    if (success) {
+        user.send({
+            embeds: [
+                new EmbedBuilder()
+                    .setColor('#ff0000')
+                    .setTitle('🚨 Multa Recibida')
+                    .setDescription(`Has recibido una multa de ${amount}€\nRazón: ${reason}`)
+                    .setTimestamp()
+            ]
+        }).catch(() => {});
+    }
+});
+
+// Sistema de incautación de vehículos
+client.on('vehicleConfiscated', async (userId, vehicleInfo) => {
+    const user = await client.users.fetch(userId);
+    
+    user.send({
+        embeds: [
+            new EmbedBuilder()
+                .setColor('#ff0000')
+                .setTitle('🚗 Vehículo Incautado')
+                .setDescription(`Tu vehículo ha sido incautado\nInformación: ${vehicleInfo}`)
+                .setTimestamp()
+        ]
+    }).catch(() => {});
+});
+
+client.login(process.env.TOKEN);

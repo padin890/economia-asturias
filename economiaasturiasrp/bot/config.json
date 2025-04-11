@@ -1,0 +1,17 @@
+{
+    "prefix": "!",
+    "ownerId": "903994062737141772",
+    "embedColors": {
+        "success": "#00ff00",
+        "error": "#ff0000",
+        "info": "#0099ff",
+        "warning": "#ffff00"
+    },
+    "economy": {
+        "workCooldown": 3600000,
+        "dailyCooldown": 86400000,
+        "workMinReward": 100,
+        "workMaxReward": 1000,
+        "dailyReward": 500
+    }
+}

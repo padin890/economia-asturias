@@ -1,0 +1,86 @@
+const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+
+module.exports = {
+    name: 'fine',
+    aliases: ['multar', 'penalizar', 'sancion'],
+    description: 'Impone una multa económica a un usuario (Solo administradores)',
+    usage: 'fine <@usuario> <cantidad> [razón]',
+    async execute(client, message, args) {
+        try {
+            // Verificar permisos de administrador
+            if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+                return message.reply({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setColor(client.config.embedColors.error)
+                            .setDescription('❌ No tienes permisos para usar este comando.')
+                    ]
+                });
+            }
+
+            // Verificar argumentos
+            if (args.length < 2) {
+                return message.reply({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setColor(client.config.embedColors.error)
+                            .setTitle('❌ Error de Uso')
+                            .setDescription(`Debes especificar un usuario y una cantidad.\nUso correcto: ${this.usage}`)
+                    ]
+                });
+            }
+
+            // Aquí continuaría la lógica del comando para multar al usuario
+            
+            // Obtener el usuario mencionado
+            const targetUser = message.mentions.users.first();
+            if (!targetUser) {
+                return message.reply({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setColor(client.config.embedColors.error)
+                            .setDescription('❌ Debes mencionar a un usuario válido.')
+                    ]
+                });
+            }
+
+            // Obtener la cantidad de la multa
+            const amount = parseInt(args[1]);
+            if (isNaN(amount) || amount <= 0) {
+                return message.reply({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setColor(client.config.embedColors.error)
+                            .setDescription('❌ Debes especificar una cantidad válida mayor que 0.')
+                    ]
+                });
+            }
+
+            // Obtener la razón (opcional)
+            const reason = args.slice(2).join(' ') || 'No se especificó una razón';
+
+            // Aquí iría la lógica para aplicar la multa al usuario
+            // Por ejemplo, actualizar la base de datos, etc.
+
+            // Mensaje de confirmación
+            return message.reply({
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor(client.config.embedColors.success)
+                        .setTitle('✅ Multa Aplicada')
+                        .setDescription(`Se ha multado a ${targetUser} con ${amount} monedas.\nRazón: ${reason}`)
+                ]
+            });
+
+        } catch (error) {
+            console.error(error);
+            return message.reply({
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor(client.config.embedColors.error)
+                        .setDescription('❌ Ocurrió un error al ejecutar el comando.')
+                ]
+            });
+        }
+    }
+};

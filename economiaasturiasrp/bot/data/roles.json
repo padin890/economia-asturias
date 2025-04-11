@@ -1,0 +1,32 @@
+
+{
+  "roles": [
+    {
+      "id": "vip",
+      "name": "VIP",
+      "price": 50000,
+      "color": "#FFD700",
+      "collectionTime": 86400000,
+      "collectionAmount": 5000,
+      "description": "Rol VIP con beneficios diarios"
+    },
+    {
+      "id": "elite",
+      "name": "Elite",
+      "price": 100000,
+      "color": "#FF0000",
+      "collectionTime": 43200000,
+      "collectionAmount": 8000,
+      "description": "Rol Elite con beneficios cada 12 horas"
+    },
+    {
+      "id": "premium",
+      "name": "Premium",
+      "price": 250000,
+      "color": "#800080",
+      "collectionTime": 21600000,
+      "collectionAmount": 12000,
+      "description": "Rol Premium con beneficios cada 6 horas"
+    }
+  ]
+}
